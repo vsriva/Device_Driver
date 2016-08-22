@@ -1,0 +1,5 @@
+SCULL (Simple Character Utility for Loading Localities). 
+It is a char driver that acts on a memory area as though it were a device.
+Its an self devised implementation of the ideas discussed in the book Linux Device Driver 3rd Edition.
+Currently the device driver writes on only single block and can store multiple no.of cells based data and cell size.
+Multithreaded support not implemented yet.
