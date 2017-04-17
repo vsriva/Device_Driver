@@ -1,0 +1,16 @@
+Device Driver for Crypto Engine for Allwinner R8 Chipset
+
+The Crypto Engine is one encrypt/ decrypt function accelerator suitable for a variety of applications. It supports both
+encryption and decryption and several modes. Besides, both CPU mode and DMA method are supported for different
+applications.
+
+It features:
+1. Support AES, DES, 3DES, SHA-1, MD5
+2. Support ECB, CBC modes for AES/DES/3DES
+3. 128-bits, 192-bits and 256-bits key size for AES
+4. 160-bits hardware PRNG with 192-bits seed
+5. Support 32-words RX FIFO and 32-words TX FIFO for high speed application
+6. Support CPU mode and DMA mode
+
+Status: Under Development
+
