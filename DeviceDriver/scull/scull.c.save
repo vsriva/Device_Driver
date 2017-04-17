@@ -1,0 +1,217 @@
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/device.h>
+#include <linux/kernel.h>
+#include <linux/fs.h>
+#include <asm/uaccess.h>
+#include <linux/slab.h>
+
+#define DEVICE_NAME "scullchar"
+#define CLASS_NAME "char"
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Vishal Srivastava");
+MODULE_DESCRIPTION(" A character driver ");
+MODULE_VERSION("0.1");
+
+struct storage{
+	void **data;
+	int blockId;
+	int cellSize;
+	struct storage *next;
+	struct storage *prev;
+};
+
+struct scull_dev{
+	int devId;
+	struct  storage *entry;
+	struct storage *exit;
+} dev1;
+
+static int majorNumber;
+static int numOpens=0;
+static struct class* scullClass = NULL;
+static struct device* scullDevice = NULL;
+
+static int scull_open(struct inode *, struct file *);
+static int scull_release(struct inode *, struct file *);
+static ssize_t scull_read(struct file *, char *, size_t, loff_t *);
+static ssize_t scull_write(struct file *, const char *, size_t, loff_t *);
+
+static struct file_operations fops =
+{
+	.owner = THIS_MODULE,
+	.open = scull_open,
+	.read = scull_read,
+	.write = scull_write,
+	.release = scull_release,
+};
+
+/////////Will be used for cleanup of complete device////////////////////////////
+static int scull_trim(struct scull_dev *dev){
+	struct storage *block;
+	block=dev->exit;
+	while(block != NULL){
+		int index=0;
+		if(block->data == NULL){
+			block=block->next;
+			continue;
+		}
+
+		for(index=0;index < (block->cellSize);index++){
+			kfree(block->data[index]);
+		}
+		kfree(block->data);
+		block->data=NULL;
+		block=block->prev;
+		if(block != NULL){
+			kfree(block->next);
+			block->next=NULL;
+		}
+	}
+	kfree(dev->entry);
+	dev->entry=NULL;
+	dev->exit=NULL;
+
+	return 0;
+}
+
+///////////Used for Reading a cell in a block//////////////////////////////////////
+static ssize_t scull_read(struct file *fp, char *buf, size_t count, loff_t *fpos){
+	int err = 0;
+	int messageSize;
+	struct scull_dev *dev=&dev1;
+	if(dev->entry == NULL){
+		printk(KERN_ALERT "SCULL: Device is empty");
+		return -EFAULT;
+	} 
+	messageSize=dev->entry->cellSize;
+	err = copy_to_user(buf,(char*)(dev->entry->data[0]), messageSize);
+	if(err==0){
+		printk(KERN_INFO "SCULL: Sent %d characters to the user", messageSize);
+	}
+	else{
+		printk(KERN_INFO "SCULL: Failed to send %d charcters to the user\n", err);
+		return -EFAULT;
+	}
+	return 0;
+}
+
+///////////Used to Allocate Blocks //////////////////////////////////
+static int block_alloc(int NBlocks, int Ncells, struct scull_dev *dev){
+
+	int cellCount=Ncells;
+	int BlockCount=NBlocks;
+	while(BlockCount --){
+	        if((dev->exit != NULL)&&(dev->entry != NULL)){
+        	        dev->exit->next=kmalloc(sizeof(struct storage),GFP_KERNEL);
+                	dev->exit->next->data=kmalloc(Ncells*sizeof(char *),GFP_KERNEL);
+			for(cellCount=0;cellCount < Ncells; cellCount++){
+                		dev->exit->next->data[cellCount]=kmalloc(256*sizeof(char), GFP_KERNEL);
+			}
+			dev->exit->next->cellSize=256;
+			dev->exit->next->prev=dev->exit;
+			dev->exit=dev->exit->next;
+			dev->exit->next=NULL;
+
+        	}
+		else if((dev->exit == NULL)&&(dev->entry == NULL)){
+                	dev->exit=kmalloc(sizeof(struct storage),GFP_KERNEL);
+                	dev->exit->data=kmalloc(Ncells*sizeof(char *),GFP_KERNEL);
+			for(cellCount=0;cellCount < Ncells;cellCount++){
+                		dev->exit->data[cellCount]=kmalloc(256*sizeof(char), GFP_KERNEL);
+			}
+			dev->exit->cellSize=256;
+                	dev->exit->next=NULL;
+			dev->exit->prev=NULL;
+                	dev->entry=dev->exit;
+		}
+	}
+	return 0;
+
+}
+
+////////////////Used to Write Blocks///////////////////////////////////////////////
+static ssize_t scull_write(struct file *fp, const char *buf, size_t  count, loff_t *fpos){
+	int err=0;
+	int messageSize;
+	struct scull_dev *dev=&dev1;
+	block_alloc(1,10,dev);
+	if(dev->entry == NULL){
+		printk(KERN_ALERT "SCULL: Block alloc Failed");
+		return -EFAULT;
+	}
+
+	messageSize=strlen(buf);
+	dev->entry->cellSize=messageSize;
+	err = copy_from_user(dev->entry->data[0], buf, messageSize);
+
+        if(err==0){
+                printk(KERN_INFO "SCULL: Read %d characters to the user", messageSize);
+        }
+        else{
+                printk(KERN_INFO "SCULL: Failed to read %d charcters to the user\n", err);
+                return -EFAULT;
+        }
+	return 0;
+}
+
+
+//////////////Used to open a device///////////////////////////
+static int scull_open(struct inode *inode, struct file *fp){
+	numOpens++;
+	printk(KERN_INFO "SCULL: Device has been opened %d time(s)\n", numOpens);
+	return 0;
+}
+
+/////////////Used to close a device///////////////////////////
+static int scull_release(struct inode *inodep, struct file *fp){
+	printk(KERN_INFO "SCULL: Device successfully closed\n");
+	return 0;
+}
+
+
+///////////////Used to initialize a device///////////////////
+static int __init scull_init(void){
+	printk(KERN_INFO "SCULL: Intializing Scull \n");
+
+	majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
+	if(majorNumber<0){
+		printk(KERN_ALERT "SCULL: Failed to register a major number\n");
+		return majorNumber;
+	}
+	printk(KERN_INFO "SCULL: Major Number %d registered\n",majorNumber);
+
+	scullClass = class_create(THIS_MODULE, CLASS_NAME);
+	if(IS_ERR(scullClass)){
+		unregister_chrdev(majorNumber, DEVICE_NAME);
+		printk(KERN_ALERT "SCULL: Failed to register device class\n");
+		return PTR_ERR(scullClass);
+	}
+	printk(KERN_INFO "SCULL: Device class registered correctly\n");
+
+	scullDevice = device_create(scullClass, NULL, MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
+	if(IS_ERR(scullDevice)){
+		class_destroy(scullClass);
+		unregister_chrdev(majorNumber, DEVICE_NAME);
+		printk(KERN_ALERT "SCULL: Failed to create the device\n");
+		return PTR_ERR(scullDevice);
+	}
+	printk(KERN_INFO "SCULL: Device class created correctly\n");
+	return 0;
+}
+ 
+///////////////Used for cleanup for the device/////////////////////////
+static void __exit scull_exit(void){
+	scull_trim(&dev1);
+	device_destroy(scullClass, MKDEV(majorNumber, 0));
+	class_unregister(scullClass);
+	class_destroy(scullClass);
+	unregister_chrdev(majorNumber, DEVICE_NAME);
+	printk(KERN_INFO "SCULL: Goodbye from Scull \n");
+}
+
+
+module_init(scull_init);
+module_exit(scull_exit);
+
