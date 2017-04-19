@@ -98,3 +98,21 @@
 #define CE_ICSR_RXFIFO_EMPTYINTEN	(1 << 2)
 #define CE_ICSR_TXFIFO_DATAINTDIS	(0 << 0)
 #define CE_ICSR_TXFIFO_DATAINTEN	(1 << 0)
+
+struct crypto_ctx {
+	void __iomem *base;
+	int irq;
+	struct clk *busclk;
+	struct clk *devclk;
+	struct reset_control *reset;
+	struct device *dev;
+	struct resource *res;
+	spinlock_t slock; /* control the use of the device */
+};
+
+struct crypto_tfm_ctx {
+	u32 key[AES_MAX_KEY_SIZE / 4];/* divided by sizeof(u32) */
+	u32 keylen;
+	u32 keymode;
+	struct crypto_ctx *ss;
+};
