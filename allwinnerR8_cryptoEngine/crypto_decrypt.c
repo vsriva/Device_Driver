@@ -100,12 +100,12 @@ static int __init crypto_engine_decrypt_init(void)
 
 	crypto_engine_decrypt_device =
 		device_create(
-					crypto_engine_decrypt_class,
-					NULL,
-					MKDEV(major_number, 0),
-					NULL,
-					DEVICE_NAME
-					);
+			crypto_engine_decrypt_class,
+			NULL,
+			MKDEV(major_number, 0),
+			NULL,
+			DEVICE_NAME
+			);
 	if (IS_ERR(crypto_engine_decrypt_device)) {
 		class_destroy(crypto_engine_decrypt_class);
 		unregister_chrdev(major_number, DEVICE_NAME);
