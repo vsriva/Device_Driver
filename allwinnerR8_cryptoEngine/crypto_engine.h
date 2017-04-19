@@ -20,7 +20,7 @@
  *SOFTWARE.
  */
 
-#define BASE_ADDRESS 0x01C15000
+#define BASE_ADDRESS	0x01C15000
 
 #define CE_CTL		0x00
 #define CE_KEY0		0x04
@@ -52,5 +52,49 @@
 #define CE_RXFIFO	0x200
 #define CE_TXFIFO	0x204
 
+/* For CE_CTL Reg */
 
+#define CE_CTL_CE_KEY		(0 << 24)
+#define CE_CTL_PRNG_ONESHOT	(0 << 15)
+#define CE_CTL_PRNG_CONT	(1 << 15)
+#define CE_CTL_IV_CONST		(0 << 14)
+#define CE_CTL_IV_ARB		(1 << 14)
+#define CE_CTL_CE_ECB		(0 << 12)
+#define CE_CTL_CE_CBC		(1 << 12)
+#define CE_CTL_KEYSIZE_AES128	(0 << 8)
+#define CE_CTL_KEYSIZE_AES192	(1 << 8)
+#define CE_CTL_KEYSIZE_AES256	(2 << 8)
+#define CE_CTL_CE_ENCYPT	(0 << 7)
+#define CE_CTL_CE_DECYPT	(1 << 7)
+#define CE_CTL_CE_AES		(0 << 4)
+#define CE_CTL_CE_DES		(1 << 4)
+#define CE_CTL_CE_3DES		(2 << 4)
+#define CE_CTL_CE_SHA1		(3 << 4)
+#define CE_CTL_CE_MD5		(4 << 4)
+#define CE_CTL_CE_PRNG		(5 << 4)
+#define CE_CTL_SHA_DATAEND	(1 << 2)
+#define CE_CTL_PRNG_START	(1 << 1)
+#define CE_CTL_CE_DIS		(0 << 0)
+#define CE_CTL_CE_EN		(1 << 0)
 
+/* For CE_FCSR Reg */
+
+#define CE_FCSR_RXFIFO_NOTFULLFLAG	(1 << 30)
+#define CE_FCSR_RXFIFO_WC(val)		((val >> 24) & 0x3f)
+#define CE_FCSR_TXFIFO_NOTEMPTYFLAG	(1 << 22)
+#define CE_FCSR_TXFIFO_WC(val)		((val >> 16) & 0x07)
+#define CE_FCSR_RXFIFO_EMPTYTRIG(val)	((val) & 0x0f)
+#define CE_FCSR_TXFIFO_TRIG(val)	((val) & 0x0f)
+
+/* For CE_ICSR */
+
+#define CE_ICSR_RXFIFO_EMPTYNOTPEN	(0 << 10)
+#define CE_ICSR_RXFIFO_EMPTYPEN		(1 << 10)
+#define CE_ICSR_TXFIFO_DATANOTPEN	(0 << 8)
+#define CE_ICSR_TXFIFO_DATAPEN		(1 << 8)
+#define CE_ICSR_DRQDIS			(0 << 4)
+#define CE_ICSR_DRQEN			(1 << 4)
+#define CE_ICSR_RXFIFO_EMPTYINTDIS	(0 << 2)
+#define CE_ICSR_RXFIFO_EMPTYINTEN	(1 << 2)
+#define CE_ICSR_TXFIFO_DATAINTDIS	(0 << 0)
+#define CE_ICSR_TXFIFO_DATAINTEN	(1 << 0)
