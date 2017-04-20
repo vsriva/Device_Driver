@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-	obj-m := crypto_engine.o crypto_encrypt.o crypto_decrypt.o
+	obj-m := crypto_engine.o crypto_encrypt.o crypto_decrypt.o crypto_cipher.o
 else
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build

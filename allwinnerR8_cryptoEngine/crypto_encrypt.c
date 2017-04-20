@@ -83,6 +83,7 @@ static int crypto_engine_encrypt_release(struct inode *inodep, struct file *fp)
 static int __init crypto_engine_encrypt_init(void)
 {
 	pr_debug("CRYPT_ENCRYPT: Intializing Crypto Engine Encrypt\n");
+	num_opens = 0;
 	major_number = register_chrdev(0, DEVICE_NAME, &fops);
 	if (major_number < 0) {
 		pr_alert("CRYPT_ENCRYPT: Failed to register a major number\n");
@@ -100,12 +101,12 @@ static int __init crypto_engine_encrypt_init(void)
 
 	crypto_engine_encrypt_device =
 		device_create(
-					crypto_engine_encrypt_class,
-					NULL,
-					MKDEV(major_number, 0),
-					NULL,
-					DEVICE_NAME
-					);
+			crypto_engine_encrypt_class,
+			NULL,
+			MKDEV(major_number, 0),
+			NULL,
+			DEVICE_NAME
+			);
 	if (IS_ERR(crypto_engine_encrypt_device)) {
 		class_destroy(crypto_engine_encrypt_class);
 		unregister_chrdev(major_number, DEVICE_NAME);

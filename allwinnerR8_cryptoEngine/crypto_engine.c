@@ -26,13 +26,13 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
-#include <linux/scatterwalk.h>
+#include <crypto/scatterwalk.h>
 #include <linux/scatterlist.h>
 #include <linux/delay.h>
 #include <linux/reset.h>
 #include <linux/interrupt.h>
 
-#include "cryptoEngine.h"
+#include "crypto_engine.h"
 
 struct crypto_alg crypto = {
 	.cra_name = "ecb(aes)",
@@ -62,7 +62,7 @@ static int crypto_probe(struct platform_device *pdev)
 	int err, i;
 	unsigned long cr;
 	const unsigned long clk_ahb = 24 * 1000 * 1000;
-	const unsigned long clk_mod = 24 * 1000 * 1000;
+	const unsigned long clk_mod = 150 * 1000 * 1000;
 	struct crypto_ctx *ss;
 	
 	
@@ -188,7 +188,7 @@ static struct platform_driver crypto_driver = {
 
 module_platform_driver(crypto_driver);
 
-MODULE_DESCRIPTION("Allwinner R8 Crypto Engine");
+MODULE_DESCRIPTION("Allwinner R8 AES-256 Crypto Engine");
 MODULE_LICENCE("GPL");
 MODULE_AUTHOR("Vishal Srivastava <vsriva10@asu.edu>");
 

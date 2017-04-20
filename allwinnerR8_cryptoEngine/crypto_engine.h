@@ -19,6 +19,18 @@
  *OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *SOFTWARE.
  */
+#include <linux/clk.h>
+#include <linux/crypto.h>
+#include <linux/io.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
+#include <linux/reset.h>
+#include <crypto/scatterwalk.h>
+#include <linux/scatterlist.h>
+#include <linux/interrupt.h>
+#include <linux/delay.h>
+#include <crypto/aes.h>
 
 #define BASE_ADDRESS	0x01C15000
 
@@ -64,8 +76,8 @@
 #define CE_CTL_KEYSIZE_AES128	(0 << 8)
 #define CE_CTL_KEYSIZE_AES192	(1 << 8)
 #define CE_CTL_KEYSIZE_AES256	(2 << 8)
-#define CE_CTL_CE_ENCYPT	(0 << 7)
-#define CE_CTL_CE_DECYPT	(1 << 7)
+#define CE_CTL_CE_ENCRYPT	(0 << 7)
+#define CE_CTL_CE_DECRYPT	(1 << 7)
 #define CE_CTL_CE_AES		(0 << 4)
 #define CE_CTL_CE_DES		(1 << 4)
 #define CE_CTL_CE_3DES		(2 << 4)
@@ -99,6 +111,11 @@
 #define CE_ICSR_TXFIFO_DATAINTDIS	(0 << 0)
 #define CE_ICSR_TXFIFO_DATAINTEN	(1 << 0)
 
+
+#define CE_RX_MAX	32
+#define CE_RX_DEFAULT	CE_RX_MAX
+#define CE_TX_MAX	33
+
 struct crypto_ctx {
 	void __iomem *base;
 	int irq;
@@ -116,3 +133,9 @@ struct crypto_tfm_ctx {
 	u32 keymode;
 	struct crypto_ctx *ss;
 };
+
+int sun4i_ss_cipher_init(struct crypto_tfm *tfm);
+int sun4i_ss_aes_setkey(struct crypto_ablkcipher *tfm, const u8 *key, unsigned int keylen);
+
+int sun4i_ss_cbc_aes_encrypt(struct ablkcipher_request *areq);
+int sun4i_ss_cbc_aes_decrypt(struct ablkcipher_request *areq);
